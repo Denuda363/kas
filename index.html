@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <!-- AI Studio Preview: HMR is disabled, suppress Vite WebSocket connection errors -->
+    <script>
+      (function() {
+        if (typeof window !== 'undefined' && window.WebSocket) {
+          var NativeWebSocket = window.WebSocket;
+          function ViteMockWebSocket(url, protocols) {
+            var urlStr = String(url || '');
+            var isVite = urlStr.includes('vite') ||
+                         urlStr.includes('24678') ||
+                         urlStr.includes('token=') ||
+                         protocols === 'vite-hmr' ||
+                         protocols === 'vite-ping';
+            if (isVite) {
+              var listeners = {};
+              var dummy = {
+                CONNECTING: 0,
+                OPEN: 1,
+                CLOSING: 2,
+                CLOSED: 3,
+                readyState: 1, // Mark OPEN immediately so Vite never rejects with "WebSocket closed without opened"
+                url: urlStr,
+                protocol: protocols || '',
+                extensions: '',
+                bufferedAmount: 0,
+                binaryType: 'blob',
+                onopen: null,
+                onclose: null,
+                onerror: null,
+                onmessage: null,
+                addEventListener: function(type, listener) {
+                  if (!listeners[type]) listeners[type] = [];
+                  listeners[type].push(listener);
+                  if (type === 'open') {
+                    setTimeout(function() {
+                      try { listener({ type: 'open' }); } catch(e) {}
+                      if (typeof dummy.onopen === 'function') {
+                        try { dummy.onopen({ type: 'open' }); } catch(e) {}
+                      }
+                    }, 0);
+                  }
+                },
+                removeEventListener: function(type, listener) {
+                  if (listeners[type]) {
+                    listeners[type] = listeners[type].filter(function(l) { return l !== listener; });
+                  }
+                },
+                dispatchEvent: function(event) {
+                  var arr = listeners[event.type] || [];
+                  arr.forEach(function(fn) { try { fn(event); } catch(e) {} });
+                  return true;
+                },
+                send: function() {},
+                close: function() {
+                  dummy.readyState = 3;
+                }
+              };
+              return dummy;
+            }
+            return new NativeWebSocket(url, protocols);
+          }
+          ViteMockWebSocket.prototype = NativeWebSocket.prototype;
+          ViteMockWebSocket.CONNECTING = NativeWebSocket.CONNECTING;
+          ViteMockWebSocket.OPEN = NativeWebSocket.OPEN;
+          ViteMockWebSocket.CLOSING = NativeWebSocket.CLOSING;
+          ViteMockWebSocket.CLOSED = NativeWebSocket.CLOSED;
+          window.WebSocket = ViteMockWebSocket;
+        }
+
+        // Catch and prevent any stray Vite WebSocket unhandled promise rejection or error
+        window.addEventListener('unhandledrejection', function(event) {
+          if (event && event.reason) {
+            var msg = String(event.reason.message || '');
+            var stack = String(event.reason.stack || '');
+            if (msg.includes('WebSocket') || stack.includes('@vite/client')) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+          }
+        }, true);
+
+        window.addEventListener('error', function(event) {
+          if (event) {
+            var msg = String(event.message || '');
+            var filename = String(event.filename || '');
+            if (msg.includes('WebSocket') || filename.includes('@vite/client')) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+          }
+        }, true);
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>BukuKas Pro - Pengelola Uang Masuk & Keluar</title>
+    <meta name="description" content="Aplikasi pembukuan dan pengelolaan arus kas masuk & keluar modern, kustomisasi kategori, pencatatan nota, dan ekspor laporan ke Excel & PDF dengan database Firebase Realtime Firestore." />
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#059669" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="BukuKas" />
+    <meta name="application-name" content="BukuKas Pro" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- OpenGraph & Twitter -->
+    <meta property="og:title" content="BukuKas Pro - Pengelola Uang Masuk & Keluar" />
+    <meta property="og:description" content="Aplikasi pembukuan dan pengelolaan arus kas masuk & keluar modern berbasis cloud Firebase Realtime Firestore." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

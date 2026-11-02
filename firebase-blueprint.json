@@ -1,0 +1,194 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Catatan uang masuk dan uang keluar yang disinkronisasi realtime",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "ID unik transaksi kas"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID pengguna yang mencatat transaksi"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Tanggal transaksi YYYY-MM-DD"
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 5,
+          "description": "Waktu transaksi HH:mm"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["pemasukan", "pengeluaran"],
+          "description": "Jenis arus kas: pemasukan atau pengeluaran"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Nominal uang dalam Rupiah (harus positif)"
+        },
+        "categoryId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID kategori transaksi"
+        },
+        "accountId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID rekening kas / dompet"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Catatan atau keterangan transaksi"
+        },
+        "recipientOrPayer": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Nama pembayar atau penerima uang"
+        },
+        "receiptUrl": {
+          "type": "string",
+          "maxLength": 500000,
+          "description": "URL gambar atau data base64 nota struk"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Timestamp pembuatan transaksi dalam ms"
+        }
+      },
+      "required": ["id", "date", "type", "amount", "categoryId", "accountId"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Kategori pos pemasukan dan pengeluaran kas",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "ID unik kategori"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Nama kategori pos kas"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["pemasukan", "pengeluaran"],
+          "description": "Jenis kategori: pemasukan atau pengeluaran"
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Nama ikon Lucide"
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Kode warna atau kelas Tailwind"
+        },
+        "isCustom": {
+          "type": "boolean",
+          "description": "Penanda kategori kustom pengguna"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Deskripsi opsional kategori"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID pengguna pemilik kategori kustom"
+        }
+      },
+      "required": ["id", "name", "type", "icon", "color"]
+    },
+    "Account": {
+      "title": "AccountWallet",
+      "description": "Rekening bank atau dompet kas",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "ID akun kas"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Nama rekening/dompet kas"
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Ikon dompet"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["tunai", "bank", "ewallet"],
+          "description": "Jenis akun dompet"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID pengguna"
+        }
+      },
+      "required": ["id", "name", "icon", "type"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Pengaturan sistem aplikasi seperti PIN Admin",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Kunci pengaturan (misal: adminPin)"
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Nilai konfigurasi tersimpan"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Waktu perubahan terakhir"
+        }
+      },
+      "required": ["key", "value"]
+    }
+  },
+  "firestore": {
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Koleksi data transaksi uang masuk dan keluar realtime"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Koleksi kategori pemasukan dan pengeluaran realtime"
+    },
+    "/accounts/{accountId}": {
+      "schema": "Account",
+      "description": "Koleksi akun kas dan dompet realtime"
+    },
+    "/settings/{settingId}": {
+      "schema": "Setting",
+      "description": "Koleksi pengaturan sistem seperti PIN Admin"
+    }
+  }
+}

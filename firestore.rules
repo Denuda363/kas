@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny-all catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core verification primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for Transaction entity
+    function isValidTransaction(data, docId) {
+      return data.keys().hasAll(['id', 'date', 'type', 'amount', 'categoryId', 'accountId']) &&
+             data.keys().hasOnly(['id', 'date', 'time', 'type', 'amount', 'categoryId', 'accountId', 'note', 'recipientOrPayer', 'receiptUrl', 'createdAt', 'userId']) &&
+             data.id is string && data.id == docId && data.id.size() <= 128 &&
+             data.date is string && data.date.size() == 10 && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+             (data.type == 'pemasukan' || data.type == 'pengeluaran') &&
+             data.amount is number && data.amount > 0 &&
+             data.categoryId is string && data.categoryId.size() > 0 && data.categoryId.size() <= 128 &&
+             data.accountId is string && data.accountId.size() > 0 && data.accountId.size() <= 128 &&
+             (!('time' in data) || (data.time is string && data.time.size() <= 8)) &&
+             (!('note' in data) || (data.note is string && data.note.size() <= 1000)) &&
+             (!('recipientOrPayer' in data) || (data.recipientOrPayer is string && data.recipientOrPayer.size() <= 200)) &&
+             (!('receiptUrl' in data) || (data.receiptUrl is string && data.receiptUrl.size() <= 500000)) &&
+             (!('createdAt' in data) || (data.createdAt is number)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128));
+    }
+
+    // Validation for Category entity
+    function isValidCategory(data, docId) {
+      return data.keys().hasAll(['id', 'name', 'type', 'icon', 'color']) &&
+             data.keys().hasOnly(['id', 'name', 'type', 'icon', 'color', 'isCustom', 'description', 'userId']) &&
+             data.id is string && data.id == docId && data.id.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             (data.type == 'pemasukan' || data.type == 'pengeluaran') &&
+             data.icon is string && data.icon.size() > 0 && data.icon.size() <= 50 &&
+             data.color is string && data.color.size() > 0 && data.color.size() <= 50 &&
+             (!('isCustom' in data) || data.isCustom is bool) &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 255)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128));
+    }
+
+    // Validation for Account entity
+    function isValidAccount(data, docId) {
+      return data.keys().hasAll(['id', 'name', 'icon', 'type']) &&
+             data.keys().hasOnly(['id', 'name', 'icon', 'type', 'userId']) &&
+             data.id is string && data.id == docId && data.id.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.icon is string && data.icon.size() > 0 && data.icon.size() <= 50 &&
+             (data.type == 'tunai' || data.type == 'bank' || data.type == 'ewallet') &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128));
+    }
+
+    // Validation for Setting entity
+    function isValidSetting(data, docId) {
+      return data.keys().hasAll(['key', 'value']) &&
+             data.keys().hasOnly(['key', 'value', 'updatedAt']) &&
+             data.key is string && data.key == docId && data.key.size() <= 64 &&
+             data.value is string && data.value.size() >= 4 && data.value.size() <= 256 &&
+             (!('updatedAt' in data) || data.updatedAt is number);
+    }
+
+    // Collection: Transactions
+    match /transactions/{transactionId} {
+      allow read: if isSignedIn();
+      allow create: if isVerifiedUser() && isValidId(transactionId) && isValidTransaction(incoming(), transactionId);
+      allow update: if isVerifiedUser() && isValidId(transactionId) && isValidTransaction(incoming(), transactionId) &&
+                       incoming().id == existing().id &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['date', 'time', 'type', 'amount', 'categoryId', 'accountId', 'note', 'recipientOrPayer', 'receiptUrl', 'createdAt', 'userId']);
+      allow delete: if isVerifiedUser() && isValidId(transactionId);
+    }
+
+    // Collection: Categories
+    match /categories/{categoryId} {
+      allow read: if isSignedIn();
+      allow create: if isVerifiedUser() && isValidId(categoryId) && isValidCategory(incoming(), categoryId);
+      allow update: if isVerifiedUser() && isValidId(categoryId) && isValidCategory(incoming(), categoryId) &&
+                       incoming().id == existing().id &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'icon', 'color', 'isCustom', 'description', 'userId']);
+      allow delete: if isVerifiedUser() && isValidId(categoryId);
+    }
+
+    // Collection: Accounts
+    match /accounts/{accountId} {
+      allow read: if isSignedIn();
+      allow create: if isVerifiedUser() && isValidId(accountId) && isValidAccount(incoming(), accountId);
+      allow update: if isVerifiedUser() && isValidId(accountId) && isValidAccount(incoming(), accountId) &&
+                       incoming().id == existing().id &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'icon', 'type', 'userId']);
+      allow delete: if isVerifiedUser() && isValidId(accountId);
+    }
+
+    // Collection: Settings (e.g. adminPin)
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerifiedUser() && isValidId(settingId) && isValidSetting(incoming(), settingId);
+      allow delete: if isVerifiedUser() && isValidId(settingId);
+    }
+  }
+}

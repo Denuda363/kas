@@ -1,0 +1,8 @@
+{
+  "name": "Pengelola Uang Masuk \u0026 Keluar",
+  "description": "Aplikasi pembukuan dan pengelolaan arus kas masuk \u0026 keluar, kustomisasi kategori pemasukan dan pengeluaran, serta ekspor laporan bulanan ke Excel dan PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
